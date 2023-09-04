@@ -20,6 +20,21 @@ const (
 
 func (app *App) registerRoutes(router *gin.Engine) {
 
+	//endpoints discovery
+	router.GET("/discovery/v1/endpoints", func(c *gin.Context) {
+		endpoint, err := app.MyEndpoint()
+		if err != nil {
+			log.Warn("endpoint error:", err.Error())
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"notifications": endpoint,
+			"webapp":        endpoint,
+		})
+	})
+
 	router.GET("/health", func(c *gin.Context) {
 		count := app.hub.ClientCount()
 		gnum := runtime.NumGoroutine()
@@ -112,5 +127,8 @@ func (app *App) registerRoutes(router *gin.Engine) {
 		authRoutes.POST("/sync/v2/signed-urls/downloads", app.blobStorageDownload)
 		authRoutes.POST("/sync/v2/signed-urls/uploads", app.blobStorageUpload)
 		authRoutes.POST("/sync/v2/sync-complete", app.syncCompleteV2)
+
+		authRoutes.GET("/sync/v3/root", app.syncGetRootV3)
+		authRoutes.PUT("/sync/v3/root", app.syncUpdateRootV3)
 	}
 }
